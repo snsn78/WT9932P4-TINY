@@ -1,18 +1,19 @@
 @echo off
 setlocal
 
-set "IDF_ROOT=E:\Vscode_codes\esp-idf-v5.4"
-set "PY_ROOT=C:\Users\20953\AppData\Local\Programs\Python\Python312"
-set "GIT_CMD=D:\openclaw\git\Git\cmd"
-
-if not exist "%IDF_ROOT%\export.bat" (
-    echo ERROR: ESP-IDF export script not found at "%IDF_ROOT%\export.bat"
+if not defined IDF_PATH (
+    echo ERROR: IDF_PATH is not set.
+    echo Run ESP-IDF export.bat first, or set IDF_PATH to your ESP-IDF directory.
     exit /b 1
 )
 
-set "PATH=%PY_ROOT%;%PY_ROOT%\Scripts;%GIT_CMD%;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;%PATH%"
+if not exist "%IDF_PATH%\export.bat" (
+    echo ERROR: ESP-IDF export script not found at "%IDF_PATH%\export.bat"
+    echo Set IDF_PATH to your ESP-IDF directory, then run this script again.
+    exit /b 1
+)
 
-call "%IDF_ROOT%\export.bat"
+call "%IDF_PATH%\export.bat"
 if errorlevel 1 exit /b %errorlevel%
 
 idf.py %*

@@ -14,8 +14,7 @@
 #include "bsp/esp-bsp.h"
 #include "bsp/display.h"
 #include "bsp_board_extra.h"
-
-void xbox_touch_gamepad_layout_demo_create(void);
+#include "xbox_touch_gamepad_layout_demo.h"
 
 static const char * TAG = "xbox_touch_ui";
 
