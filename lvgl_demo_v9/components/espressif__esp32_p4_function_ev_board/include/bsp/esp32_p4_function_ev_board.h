@@ -31,7 +31,7 @@
  **************************************************************************************************/
 
 #define BSP_CAPS_DISPLAY        1
-#define BSP_CAPS_TOUCH          1
+#define BSP_CAPS_TOUCH          0
 #define BSP_CAPS_BUTTONS        0
 #define BSP_CAPS_AUDIO          1
 #define BSP_CAPS_AUDIO_SPEAKER  1
@@ -305,7 +305,7 @@ lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg);
 /**
  * @brief Get pointer to input device (touch, buttons, ...)
  *
- * @note The LVGL input device is initialized in bsp_display_start() function.
+ * @note GT911 touch is initialized and registered as an LVGL input device during display startup.
  *
  * @return Pointer to LVGL input device or NULL when not initialized
  */

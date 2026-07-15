@@ -1,9 +1,11 @@
 #include "xbox_touch_gamepad_layout_demo.h"
+#include "gamepad_mapping_selftest.h"
 #include "gamepad_layout_model.h"
 #include "gamepad_module_builders.h"
 #include "gamepad_action_mapper.h"
 #include "gamepad_input_state.h"
 #include "gamepad_debug_overlay.h"
+#include "gamepad_multitouch_input.h"
 
 #if defined(ESP_PLATFORM)
 #include "esp_log.h"
@@ -35,6 +37,8 @@ typedef struct {
     bool dragging;
     bool resizing;
     bool changed;
+    bool multitouch_active;
+    bool multitouch_next_active;
 } module_view_ctx_t;
 
 typedef struct {
@@ -57,6 +61,8 @@ typedef struct {
     lv_obj_t * binding_panel;
     lv_obj_t * binding_dropdown;
     lv_obj_t * binding_current_label;
+    lv_obj_t * touch_markers[GAMEPAD_MULTITOUCH_MAX_POINTS];
+    lv_obj_t * touch_marker_labels[GAMEPAD_MULTITOUCH_MAX_POINTS];
     gamepad_action_id_t binding_options[GAMEPAD_ACTION_COUNT];
     uint8_t binding_option_count;
     bool binding_apply_guard;
@@ -99,6 +105,109 @@ static void schedule_render_modules(uint32_t selected_id);
 static void show_drag_preview(lv_coord_t x, lv_coord_t y, lv_coord_t w, lv_coord_t h);
 static void hide_drag_preview(void);
 static void set_subtree_clickable(lv_obj_t * obj, bool clickable);
+
+static module_view_ctx_t * find_module_view(uint32_t module_id)
+{
+    uint32_t count = lv_obj_get_child_count(g_ui.stage);
+    for(uint32_t i = 0; i < count; i++) {
+        lv_obj_t * shell = lv_obj_get_child(g_ui.stage, i);
+        module_view_ctx_t * ctx = (module_view_ctx_t *)lv_obj_get_user_data(shell);
+        if(ctx != NULL && ctx->module != NULL && ctx->module->id == module_id) return ctx;
+    }
+    return NULL;
+}
+
+static void multitouch_visual_frame_cb(const gamepad_multitouch_visual_point_t * points,
+                                       uint8_t point_count,
+                                       void * user_data)
+{
+    uint32_t child_count;
+    (void)user_data;
+
+    if(g_ui.stage == NULL) return;
+
+    child_count = lv_obj_get_child_count(g_ui.stage);
+    for(uint32_t i = 0; i < child_count; i++) {
+        lv_obj_t * shell = lv_obj_get_child(g_ui.stage, i);
+        module_view_ctx_t * ctx = (module_view_ctx_t *)lv_obj_get_user_data(shell);
+        if(ctx == NULL || ctx->content == NULL) continue;
+        ctx->multitouch_next_active = false;
+    }
+
+    for(uint8_t i = 0; i < GAMEPAD_MULTITOUCH_MAX_POINTS; i++) {
+        lv_obj_t * marker = g_ui.touch_markers[i];
+        if(marker == NULL) continue;
+        if(i >= point_count) {
+            lv_obj_add_flag(marker, LV_OBJ_FLAG_HIDDEN);
+            continue;
+        }
+
+        lv_obj_set_pos(marker, (lv_coord_t)points[i].x - 15, (lv_coord_t)points[i].y - 15);
+        if(lv_obj_has_flag(marker, LV_OBJ_FLAG_HIDDEN)) {
+            lv_label_set_text_fmt(g_ui.touch_marker_labels[i], "%u", (unsigned)points[i].track_id);
+        }
+        lv_obj_clear_flag(marker, LV_OBJ_FLAG_HIDDEN);
+
+        if(points[i].module_id != 0U) {
+            module_view_ctx_t * ctx = find_module_view(points[i].module_id);
+            if(ctx != NULL && ctx->content != NULL) {
+                ctx->multitouch_next_active = true;
+                if(ctx->module->kind == GAMEPAD_MODULE_VIEW_SLIDER) {
+                    slider_2d_set_multitouch_position(ctx->content, true,
+                                                      (lv_coord_t)points[i].x,
+                                                      (lv_coord_t)points[i].y);
+                }
+            }
+        }
+    }
+
+    for(uint32_t i = 0; i < child_count; i++) {
+        lv_obj_t * shell = lv_obj_get_child(g_ui.stage, i);
+        module_view_ctx_t * ctx = (module_view_ctx_t *)lv_obj_get_user_data(shell);
+        if(ctx == NULL || ctx->content == NULL || ctx->multitouch_active == ctx->multitouch_next_active) continue;
+
+        ctx->multitouch_active = ctx->multitouch_next_active;
+        if(ctx->multitouch_active) {
+            lv_obj_add_state(ctx->content, LV_STATE_PRESSED);
+            lv_obj_set_style_outline_width(ctx->shell, 3, 0);
+            lv_obj_set_style_outline_color(ctx->shell, lv_color_hex(0x67E8F9), 0);
+            lv_obj_set_style_outline_pad(ctx->shell, 2, 0);
+        }
+        else {
+            lv_obj_remove_state(ctx->content, LV_STATE_PRESSED);
+            if(!g_ui.edit_mode) lv_obj_set_style_outline_width(ctx->shell, 0, 0);
+            if(ctx->module->kind == GAMEPAD_MODULE_VIEW_SLIDER) {
+                slider_2d_set_multitouch_position(ctx->content, false, 0, 0);
+            }
+        }
+    }
+}
+
+static void create_multitouch_markers(void)
+{
+    static const uint32_t colors[GAMEPAD_MULTITOUCH_MAX_POINTS] = {
+        0x22D3EE, 0xFACC15, 0xFB7185, 0x4ADE80, 0xC084FC
+    };
+
+    for(uint8_t i = 0; i < GAMEPAD_MULTITOUCH_MAX_POINTS; i++) {
+        lv_obj_t * marker = lv_obj_create(g_ui.screen);
+        lv_obj_remove_style_all(marker);
+        lv_obj_set_size(marker, 30, 30);
+        lv_obj_set_style_radius(marker, LV_RADIUS_CIRCLE, 0);
+        lv_obj_set_style_bg_opa(marker, LV_OPA_30, 0);
+        lv_obj_set_style_bg_color(marker, lv_color_hex(colors[i]), 0);
+        lv_obj_set_style_border_width(marker, 3, 0);
+        lv_obj_set_style_border_color(marker, lv_color_hex(colors[i]), 0);
+        lv_obj_clear_flag(marker, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_add_flag(marker, LV_OBJ_FLAG_HIDDEN);
+
+        g_ui.touch_markers[i] = marker;
+        g_ui.touch_marker_labels[i] = lv_label_create(marker);
+        lv_label_set_text_fmt(g_ui.touch_marker_labels[i], "%u", (unsigned)i);
+        lv_obj_set_style_text_color(g_ui.touch_marker_labels[i], lv_color_white(), 0);
+        lv_obj_center(g_ui.touch_marker_labels[i]);
+    }
+}
 
 static void create_shell_background(lv_obj_t * parent)
 {
@@ -399,6 +508,7 @@ static void render_modules(uint32_t selected_id)
 
     /* 控件全部重建：清空映射表与残留输入态，随后逐个重新登记绑定。 */
     gamepad_action_mapper_reset();
+    gamepad_multitouch_input_reset();
     gamepad_input_state_reset();
 
     for(i = 0; i < g_ui.layout.module_count; i++) {
@@ -434,6 +544,7 @@ static void render_modules(uint32_t selected_id)
             lv_obj_set_pos(widget, 0, 0);
             /* 登记 控件根对象 -> 模块绑定，供控件事件回调经 mapper 写状态。 */
             gamepad_action_mapper_register(widget, module);
+            gamepad_multitouch_input_register_module(module);
             if(g_ui.edit_mode) {
                 set_subtree_clickable(widget, false);
             }
@@ -824,6 +935,7 @@ static void toolbar_button_event_cb(lv_event_t * e)
                     return;
                 }
                 g_ui.edit_mode = false;
+                gamepad_multitouch_input_set_enabled(true);
                 set_selected_ctx(NULL);
                 toggle_library_panel(false);
                 toggle_config_panel(false);
@@ -831,6 +943,7 @@ static void toolbar_button_event_cb(lv_event_t * e)
             }
             else {
                 g_ui.edit_mode = true;
+                gamepad_multitouch_input_set_enabled(false);
             }
             refresh_toolbar_state();
             schedule_render_modules(0U);
@@ -915,6 +1028,26 @@ static void slot_action_event_cb(lv_event_t * e)
     else {
         request_load_slot(action->slot_id);
     }
+}
+
+static void restore_default_layout_event_cb(lv_event_t * e)
+{
+    if(lv_event_get_code(e) != LV_EVENT_CLICKED) return;
+
+    /* Restore the built-in layout in memory; the user can save it explicitly afterwards. */
+    gamepad_multitouch_input_set_enabled(false);
+    close_active_msgbox();
+    gamepad_layout_load_default(&g_ui.layout);
+    g_ui.current_slot = 0U;
+    g_ui.dirty = true;
+    set_selected_ctx(NULL);
+    schedule_render_modules(0U);
+    refresh_slot_summaries();
+    toggle_config_panel(false);
+    if(!g_ui.edit_mode) {
+        gamepad_multitouch_input_set_enabled(true);
+    }
+    update_status_line(" | default layout restored (unsaved)");
 }
 
 static lv_obj_t * create_toolbar_button(lv_obj_t * parent, const char * text, uintptr_t button_id)
@@ -1034,7 +1167,7 @@ static void create_config_panel(void)
     uint8_t slot_id;
 
     g_ui.config_panel = lv_obj_create(g_ui.screen);
-    lv_obj_set_size(g_ui.config_panel, 320, 254);
+    lv_obj_set_size(g_ui.config_panel, 320, 310);
     lv_obj_align(g_ui.config_panel, LV_ALIGN_LEFT_MID, 20, 18);
     lv_obj_clear_flag(g_ui.config_panel, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_radius(g_ui.config_panel, 24, 0);
@@ -1093,6 +1226,21 @@ static void create_config_panel(void)
         lv_label_set_text(save_label, "Save");
         lv_obj_center(save_label);
     }
+
+    {
+        lv_obj_t * restore_button = lv_button_create(g_ui.config_panel);
+        lv_obj_t * restore_label = lv_label_create(restore_button);
+        lv_obj_set_size(restore_button, 292, 38);
+        lv_obj_align(restore_button, LV_ALIGN_BOTTOM_MID, 0, 0);
+        lv_obj_set_style_radius(restore_button, 16, 0);
+        lv_obj_set_style_bg_color(restore_button, lv_color_hex(0x593535), 0);
+        lv_obj_set_style_border_width(restore_button, 1, 0);
+        lv_obj_set_style_border_color(restore_button, lv_color_hex(0xA85D5D), 0);
+        lv_obj_add_event_cb(restore_button, restore_default_layout_event_cb, LV_EVENT_CLICKED, NULL);
+        lv_label_set_text(restore_label, "Restore Default Layout");
+        lv_obj_set_style_text_color(restore_label, lv_color_hex(0xFFE4E6), 0);
+        lv_obj_center(restore_label);
+    }
 }
 
 /* ===== Step 11: 编辑模式动作绑定 ===== */
@@ -1118,6 +1266,9 @@ static uint8_t build_action_options_for_kind(gamepad_module_kind_t kind)
         g_ui.binding_options[n++] = GAMEPAD_ACTION_BTN_R2;
         g_ui.binding_options[n++] = GAMEPAD_ACTION_BTN_START;
         g_ui.binding_options[n++] = GAMEPAD_ACTION_BTN_SELECT;
+        g_ui.binding_options[n++] = GAMEPAD_ACTION_BTN_L3;
+        g_ui.binding_options[n++] = GAMEPAD_ACTION_BTN_R3;
+        g_ui.binding_options[n++] = GAMEPAD_ACTION_BTN_HOME;
         g_ui.binding_options[n++] = GAMEPAD_ACTION_NONE;
     }
     return n;
@@ -1263,6 +1414,7 @@ void xbox_touch_gamepad_layout_demo_create(void)
     lv_memzero(&g_ui, sizeof(g_ui));
     g_ui.screen = lv_screen_active();
     g_ui.edit_mode = false;
+    gamepad_multitouch_input_set_enabled(true);
 
     /* 先销毁可能残留的调试观察层(其定时器/标签指针需在清屏前失效)。 */
     gamepad_debug_overlay_destroy();
@@ -1287,6 +1439,8 @@ void xbox_touch_gamepad_layout_demo_create(void)
     create_binding_panel();
     create_status_line();
     gamepad_debug_overlay_create(g_ui.screen);
+    create_multitouch_markers();
+    gamepad_multitouch_input_set_visual_callback(multitouch_visual_frame_cb, NULL);
 
     loaded_from_slot = gamepad_layout_load_initial(&g_ui.layout, &g_ui.current_slot);
     ESP_LOGI(TAG, "layout loaded: source=%s slot=%u modules=%u",
@@ -1328,6 +1482,9 @@ int main(int argc, char ** argv)
     lv_init();
     sdl_hal_init(GAMEPAD_LAYOUT_SCREEN_W, GAMEPAD_LAYOUT_SCREEN_H);
     xbox_touch_gamepad_layout_demo_create();
+#if defined(GAMEPAD_MAPPING_SELFTEST)
+    gamepad_mapping_selftest_run_once();
+#endif
 
     while(1) {
         uint32_t sleep_time_ms = lv_timer_handler();

@@ -287,6 +287,7 @@ static lv_obj_t * slider_2d_build(lv_obj_t * parent, lv_coord_t root_width, lv_c
                                    : LV_MAX(38, (int32_t)(SLIDER_FULL_PUCK_SIZE * scale));
 
     demo->root = lv_obj_create(parent);
+    lv_obj_set_user_data(demo->root, demo);
     lv_obj_clear_flag(demo->root, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_style_radius(demo->root, 28, 0);
     lv_obj_set_style_border_width(demo->root, compact_mode ? 1 : 0, 0);
@@ -410,6 +411,27 @@ lv_obj_t * slider_2d_create_compact(lv_obj_t * parent)
 lv_obj_t * slider_2d_create_compact_sized(lv_obj_t * parent, lv_coord_t width, lv_coord_t height)
 {
     return slider_2d_build(parent, width, height, true);
+}
+
+void slider_2d_set_multitouch_position(lv_obj_t * root, bool active, lv_coord_t screen_x, lv_coord_t screen_y)
+{
+    slider_2d_demo_t * demo;
+    lv_area_t pad_coords;
+
+    if(root == NULL) return;
+    demo = (slider_2d_demo_t *)lv_obj_get_user_data(root);
+    if(demo == NULL) return;
+
+    if(!active) {
+        start_inertia(demo);
+        return;
+    }
+
+    lv_anim_delete(demo, inertia_anim_exec_cb);
+    lv_obj_get_coords(demo->pad, &pad_coords);
+    apply_position(demo,
+                   screen_x - pad_coords.x1 - demo->puck_size / 2,
+                   screen_y - pad_coords.y1 - demo->puck_size / 2);
 }
 
 void slider_2d_demo_create(void)

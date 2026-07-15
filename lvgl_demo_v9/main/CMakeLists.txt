@@ -2,8 +2,14 @@ set(GAMEPAD_UI_SOURCES
     ../../src/gamepad_layout_model.c
     ../../src/gamepad_input_state.c
     ../../src/gamepad_action_mapper.c
+    ../../src/gamepad_view_motion.c
+    ../../src/gamepad_multitouch_input.c
     ../../src/gamepad_output.c
     ../../src/gamepad_hid_report.c
+    ../../src/gamepad_hid_device.c
+    ../../src/gamepad_usb_descriptors.c
+    ../../src/gamepad_hid_selftest.c
+    ../../src/gamepad_mapping_selftest.c
     ../../src/gamepad_debug_overlay.c
     ../../src/gamepad_button_module.c
     ../../src/joystick_stick_demo.c
@@ -16,7 +22,8 @@ set(GAMEPAD_UI_SOURCES
 idf_component_register(
     SRCS main.c ${GAMEPAD_UI_SOURCES}
     INCLUDE_DIRS . ../../src
-    PRIV_REQUIRES espressif__esp32_p4_function_ev_board nvs_flash bsp_extra)
+    PRIV_REQUIRES espressif__esp32_p4_function_ev_board nvs_flash bsp_extra
+    WHOLE_ARCHIVE)
 
 idf_component_get_property(LVGL_LIB lvgl__lvgl COMPONENT_LIB)
 target_compile_options(

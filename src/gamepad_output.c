@@ -27,6 +27,9 @@ void gamepad_output_build_from_state(const gamepad_input_state_t * state,
     if(state->btn_r2)     buttons |= GAMEPAD_OUTPUT_BTN_BIT(GAMEPAD_BTN_R2);
     if(state->btn_start)  buttons |= GAMEPAD_OUTPUT_BTN_BIT(GAMEPAD_BTN_START);
     if(state->btn_select) buttons |= GAMEPAD_OUTPUT_BTN_BIT(GAMEPAD_BTN_SELECT);
+    if(state->btn_l3)     buttons |= GAMEPAD_OUTPUT_BTN_BIT(GAMEPAD_BTN_L3);
+    if(state->btn_r3)     buttons |= GAMEPAD_OUTPUT_BTN_BIT(GAMEPAD_BTN_R3);
+    if(state->btn_home)   buttons |= GAMEPAD_OUTPUT_BTN_BIT(GAMEPAD_BTN_HOME);
 
     if(state->dpad_up)    dpad |= GAMEPAD_OUTPUT_DPAD_UP;
     if(state->dpad_down)  dpad |= GAMEPAD_OUTPUT_DPAD_DOWN;

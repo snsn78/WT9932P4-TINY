@@ -3,6 +3,10 @@
 #include <math.h>
 #include <stddef.h>   /* NULL */
 
+#if defined(ESP_PLATFORM)
+#include "gamepad_multitouch_input.h"
+#endif
+
 /* 运行时动作映射层实现 (Step 10) */
 
 typedef struct {
@@ -93,6 +97,12 @@ void gamepad_action_mapper_report_analog(const gamepad_action_binding_t * bindin
     float oy;
 
     if(binding == NULL) return;
+#if defined(ESP_PLATFORM)
+    /* The GT911 frame scanner is authoritative in PLAY mode. Allowing the
+     * legacy LVGL pointer path to write here can release a state that another
+     * active touch point set in the same frame. */
+    if(gamepad_multitouch_input_is_enabled()) return;
+#endif
 
     apply_deadzone_sensitivity(binding, nx, ny, &ox, &oy);
 
@@ -119,6 +129,9 @@ static bool resolve_button(gamepad_action_id_t action, uint8_t channel, gamepad_
         case GAMEPAD_ACTION_BTN_Y:      *out = GAMEPAD_BTN_Y; return true;
         case GAMEPAD_ACTION_BTN_START:  *out = GAMEPAD_BTN_START; return true;
         case GAMEPAD_ACTION_BTN_SELECT: *out = GAMEPAD_BTN_SELECT; return true;
+        case GAMEPAD_ACTION_BTN_L3:     *out = GAMEPAD_BTN_L3; return true;
+        case GAMEPAD_ACTION_BTN_R3:     *out = GAMEPAD_BTN_R3; return true;
+        case GAMEPAD_ACTION_BTN_HOME:   *out = GAMEPAD_BTN_HOME; return true;
         case GAMEPAD_ACTION_BTN_L1:
             /* 肩键对：channel 0 -> L1，channel 1 -> L2 */
             *out = (channel == GAMEPAD_CHANNEL_TRIGGER) ? GAMEPAD_BTN_L2 : GAMEPAD_BTN_L1;
@@ -138,6 +151,9 @@ void gamepad_action_mapper_report_button(const gamepad_action_binding_t * bindin
     gamepad_button_id_t button;
 
     if(binding == NULL) return;
+#if defined(ESP_PLATFORM)
+    if(gamepad_multitouch_input_is_enabled()) return;
+#endif
 
     if(binding->action_id == GAMEPAD_ACTION_DPAD) {
         if(channel < GAMEPAD_DPAD_COUNT) {

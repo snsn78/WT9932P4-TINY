@@ -36,6 +36,9 @@ void gamepad_input_state_reset(void)
     g_state.btn_r2 = false;
     g_state.btn_start = false;
     g_state.btn_select = false;
+    g_state.btn_l3 = false;
+    g_state.btn_r3 = false;
+    g_state.btn_home = false;
 
     g_state.dpad_up = false;
     g_state.dpad_down = false;
@@ -91,6 +94,9 @@ void gamepad_input_set_button(gamepad_button_id_t button, bool pressed)
         case GAMEPAD_BTN_R2:     slot = &g_state.btn_r2; break;
         case GAMEPAD_BTN_START:  slot = &g_state.btn_start; break;
         case GAMEPAD_BTN_SELECT: slot = &g_state.btn_select; break;
+        case GAMEPAD_BTN_L3:     slot = &g_state.btn_l3; break;
+        case GAMEPAD_BTN_R3:     slot = &g_state.btn_r3; break;
+        case GAMEPAD_BTN_HOME:   slot = &g_state.btn_home; break;
         default: return;
     }
 
@@ -133,6 +139,9 @@ const char * gamepad_button_id_to_string(gamepad_button_id_t button)
         case GAMEPAD_BTN_R2:     return "R2";
         case GAMEPAD_BTN_START:  return "START";
         case GAMEPAD_BTN_SELECT: return "SELECT";
+        case GAMEPAD_BTN_L3:     return "L3";
+        case GAMEPAD_BTN_R3:     return "R3";
+        case GAMEPAD_BTN_HOME:   return "HOME";
         default:                 return "?";
     }
 }

@@ -19,7 +19,7 @@ extern "C" {
  * 注意：HID 习惯 Y 轴向下为正，本函数会把状态层的“上为+”翻转为“下为+”。
  */
 
-typedef struct {
+typedef struct __attribute__((packed)) {
     int8_t left_x;    /* 左摇杆 X, [-127,127] 右为 + */
     int8_t left_y;    /* 左摇杆 Y, [-127,127] 下为 + (HID 习惯) */
     int8_t right_x;   /* 右摇杆(视角) X */
@@ -27,6 +27,14 @@ typedef struct {
     uint16_t buttons; /* 位布局同 gamepad_output_report_t.buttons */
     uint8_t hat;      /* 8 方向 hat：0..7 顺时针(0=上)，0x0F=居中 */
 } gamepad_hid_report_t;
+
+#ifdef __cplusplus
+static_assert(sizeof(gamepad_hid_report_t) == 7,
+              "gamepad_hid_report_t must match the 7-byte USB HID report");
+#else
+_Static_assert(sizeof(gamepad_hid_report_t) == 7,
+               "gamepad_hid_report_t must match the 7-byte USB HID report");
+#endif
 
 #define GAMEPAD_HID_HAT_CENTER 0x0F
 

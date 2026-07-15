@@ -14,6 +14,22 @@
 
 static const char *TAG = "LVGL";
 
+#if defined(ESP_PLATFORM)
+/* Optional gamepad hook. Keep esp_lvgl_port independent from the main app
+ * component: the real implementation lives in gamepad_multitouch_input.c.
+ * If the app omits it, this weak no-op keeps the LVGL port reusable. */
+__attribute__((weak)) void gamepad_multitouch_input_on_points(const uint16_t * x,
+                                                             const uint16_t * y,
+                                                             const uint8_t * track_id,
+                                                             uint8_t point_count)
+{
+    (void)x;
+    (void)y;
+    (void)track_id;
+    (void)point_count;
+}
+#endif
+
 /*******************************************************************************
 * Types definitions
 *******************************************************************************/
@@ -128,6 +144,33 @@ static void lvgl_port_touchpad_read(lv_indev_t *indev_drv, lv_indev_data_t *data
 
     /* Read data from touch controller */
     ESP_ERROR_CHECK(esp_lcd_touch_get_data(touch_ctx->handle, touch_data, &touch_cnt, CONFIG_ESP_LCD_TOUCH_MAX_POINTS));
+
+#if defined(ESP_PLATFORM)
+    /* Gamepad-specific multi-touch bridge: keep LVGL's normal single pointer
+     * path intact, but also expose all GT911 points to the virtual gamepad
+     * state scanner so two or more screen controls can be active together. */
+    {
+        uint16_t x[CONFIG_ESP_LCD_TOUCH_MAX_POINTS] = {0};
+        uint16_t y[CONFIG_ESP_LCD_TOUCH_MAX_POINTS] = {0};
+        uint8_t track_id[CONFIG_ESP_LCD_TOUCH_MAX_POINTS] = {0};
+        static uint8_t last_touch_cnt = UINT8_MAX;
+        for(uint8_t i = 0; i < touch_cnt && i < CONFIG_ESP_LCD_TOUCH_MAX_POINTS; i++) {
+            x[i] = (uint16_t)(touch_ctx->scale.x * touch_data[i].x);
+            y[i] = (uint16_t)(touch_ctx->scale.y * touch_data[i].y);
+            track_id[i] = touch_data[i].track_id;
+        }
+        if(touch_cnt != last_touch_cnt) {
+            ESP_LOGI(TAG, "GT911 frame: touch_cnt=%u (max=%u)",
+                     (unsigned)touch_cnt, (unsigned)CONFIG_ESP_LCD_TOUCH_MAX_POINTS);
+            for(uint8_t i = 0; i < touch_cnt && i < CONFIG_ESP_LCD_TOUCH_MAX_POINTS; i++) {
+                ESP_LOGI(TAG, "  point[%u]: track_id=%u x=%u y=%u",
+                         (unsigned)i, (unsigned)track_id[i], (unsigned)x[i], (unsigned)y[i]);
+            }
+            last_touch_cnt = touch_cnt;
+        }
+        gamepad_multitouch_input_on_points(x, y, track_id, touch_cnt);
+    }
+#endif
 
 #if (CONFIG_ESP_LCD_TOUCH_MAX_POINTS > 1 && CONFIG_LV_USE_GESTURE_RECOGNITION)
     // Number of touch points which need to be constantly updated inside gesture recognizers

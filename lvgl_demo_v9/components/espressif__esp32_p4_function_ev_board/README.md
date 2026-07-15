@@ -29,7 +29,7 @@ Selection color format `Board Support Package(ESP32-P4) --> Display --> Select L
 |-------------|------------------|----------------------------------------------------------------------------------------------------------|-------|
 |   DISPLAY   |:heavy_check_mark:|    [espressif/esp_lcd_ek79007](https://components.espressif.com/components/espressif/esp_lcd_ek79007)    |  1.*  |
 |  LVGL_PORT  |:heavy_check_mark:|      [espressif/esp_lvgl_port](https://components.espressif.com/components/espressif/esp_lvgl_port)      |   ^2  |
-|    TOUCH    |:heavy_check_mark:|[espressif/esp_lcd_touch_gt911](https://components.espressif.com/components/espressif/esp_lcd_touch_gt911)|   ^1  |
+|    TOUCH    |        :x:       | Disabled in the current gamepad display bring-up step.                                  |       |
 |   BUTTONS   |        :x:       |                                                                                                          |       |
 |    AUDIO    |:heavy_check_mark:|      [espressif/esp_codec_dev](https://components.espressif.com/components/espressif/esp_codec_dev)      | 1.2.* |
 |AUDIO_SPEAKER|:heavy_check_mark:|                                                                                                          |       |

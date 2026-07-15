@@ -17,6 +17,7 @@ lv_obj_t * shoulder_keys_create_compact(lv_obj_t * parent);
 
 lv_obj_t * slider_2d_create_compact(lv_obj_t * parent);
 lv_obj_t * slider_2d_create_compact_sized(lv_obj_t * parent, lv_coord_t width, lv_coord_t height);
+void slider_2d_set_multitouch_position(lv_obj_t * root, bool active, lv_coord_t screen_x, lv_coord_t screen_y);
 
 lv_obj_t * gamepad_button_create_compact(lv_obj_t * parent, const char * text);
 lv_obj_t * gamepad_button_create_compact_sized(lv_obj_t * parent,

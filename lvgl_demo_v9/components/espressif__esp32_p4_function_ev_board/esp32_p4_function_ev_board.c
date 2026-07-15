@@ -648,9 +648,9 @@ lv_display_t *bsp_display_start_with_config(const bsp_display_cfg_t *cfg)
 
     disp_indev = bsp_display_indev_init(disp);
     if (disp_indev == NULL) {
-        ESP_LOGW(TAG, "Touch init failed, continue without touch input");
+        ESP_LOGW(TAG, "GT911 touch init failed; continuing with display-only gamepad UI");
     } else {
-        ESP_LOGI(TAG, "Touch input initialized");
+        ESP_LOGI(TAG, "GT911 touch initialized and registered as LVGL input device");
     }
 
     return disp;

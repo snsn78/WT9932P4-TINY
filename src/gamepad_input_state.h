@@ -36,6 +36,9 @@ typedef enum {
     GAMEPAD_BTN_R2,
     GAMEPAD_BTN_START,
     GAMEPAD_BTN_SELECT,
+    GAMEPAD_BTN_L3,
+    GAMEPAD_BTN_R3,
+    GAMEPAD_BTN_HOME,
     GAMEPAD_BTN_COUNT
 } gamepad_button_id_t;
 
@@ -65,6 +68,9 @@ typedef struct {
     bool btn_r2;
     bool btn_start;
     bool btn_select;
+    bool btn_l3;
+    bool btn_r3;
+    bool btn_home;
 
     bool dpad_up;
     bool dpad_down;

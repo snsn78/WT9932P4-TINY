@@ -15,6 +15,8 @@
 #include "bsp/display.h"
 #include "bsp_board_extra.h"
 #include "xbox_touch_gamepad_layout_demo.h"
+#include "gamepad_mapping_selftest.h"
+#include "gamepad_hid_device.h"
 
 static const char * TAG = "xbox_touch_ui";
 
@@ -64,9 +66,15 @@ void app_main(void)
     ESP_LOGI(TAG, "Creating GamePad UI");
     xbox_touch_gamepad_layout_demo_create();
     ESP_LOGI(TAG, "GamePad UI created");
+#if defined(GAMEPAD_MAPPING_SELFTEST)
+    gamepad_mapping_selftest_run_once();
+#endif
     lv_refr_now(disp);
     ESP_LOGI(TAG, "Initial LVGL refresh requested");
 
     bsp_display_unlock();
     ESP_LOGI(TAG, "LVGL unlocked");
+
+    gamepad_hid_device_start();
+    ESP_LOGI(TAG, "HID transport boundary started");
 }

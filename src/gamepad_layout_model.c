@@ -84,7 +84,10 @@ static const char * g_action_names[] = {
     "BTN_R1",
     "BTN_R2",
     "BTN_START",
-    "BTN_SELECT"
+    "BTN_SELECT",
+    "BTN_L3",
+    "BTN_R3",
+    "BTN_HOME"
 };
 
 static void set_error(gamepad_layout_error_t * err,
@@ -623,7 +626,7 @@ static bool action_matches_kind(gamepad_module_kind_t kind, gamepad_action_id_t 
                    action == GAMEPAD_ACTION_LOOK ||
                    action == GAMEPAD_ACTION_NONE;
         case GAMEPAD_MODULE_BUTTON_SINGLE:
-            return (action >= GAMEPAD_ACTION_BTN_A && action <= GAMEPAD_ACTION_BTN_SELECT) ||
+            return (action >= GAMEPAD_ACTION_BTN_A && action <= GAMEPAD_ACTION_BTN_HOME) ||
                    action == GAMEPAD_ACTION_NONE;
         case GAMEPAD_MODULE_DPAD:
             return action == GAMEPAD_ACTION_DPAD;
