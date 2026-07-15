@@ -1,0 +1,24 @@
+You are working on an ESP32-P4 / LVGL 9 touch-screen virtual gamepad firmware repository.
+
+Read these files before editing:
+- AGENTS.md
+- docs/PROJECT_MAP.md
+- docs/VALIDATION.md
+- docs/SETUP_WINDOWS.md
+- docs/HARDWARE.md
+
+Main firmware project:
+- lvgl_demo_v9/
+
+Build command:
+cd lvgl_demo_v9
+idf.py set-target esp32p4
+idf.py build
+
+Important rules:
+- Do not remove local component overrides under lvgl_demo_v9/components/.
+- Do not commit build directories, managed_components, logs, or local IDE files.
+- Preserve the GT911 multi-touch bridge; LVGL single-pointer input alone is not enough for this gamepad.
+- Keep lvgl_demo_v9 inside the repository root because main/CMakeLists.txt references ../../src.
+- Update README/docs when setup, build, hardware, or architecture changes.
+- Verify with idf.py build before claiming firmware success.

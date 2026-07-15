@@ -43,6 +43,20 @@
 - 查看串口日志
 - 常见问题排查
 
+## 给本地大模型 / AI 编程助手
+
+如果你想把这个仓库直接交给本地大模型、Claude Code、Cursor、Copilot 或其他 AI 编程助手，请让它优先读取：
+
+- [AGENTS.md](AGENTS.md) — 通用 AI 接手规则、项目边界、构建命令
+- [CLAUDE.md](CLAUDE.md) — Claude Code 专用上下文
+- [.cursorrules](.cursorrules) — Cursor / 类 Cursor 工具上下文
+- [.github/copilot-instructions.md](.github/copilot-instructions.md) — GitHub Copilot 专用上下文
+- [docs/PROJECT_MAP.md](docs/PROJECT_MAP.md) — 项目结构、关键模块、风险区域
+- [docs/VALIDATION.md](docs/VALIDATION.md) — 编译、烧录、运行验收标准
+- [docs/LOCAL_AI_HANDOFF_PROMPT.md](docs/LOCAL_AI_HANDOFF_PROMPT.md) — 可直接复制给本地大模型的交接提示词
+
+这些文件的目的：让对方的本地 AI 不用猜项目入口、不误删本地 BSP/LVGL 补丁、不把构建产物传上 GitHub，并且知道如何验证固件真的能编译运行。
+
 ## 快速使用
 
 已经安装好 ESP-IDF 5.4 的用户，可以直接执行：
